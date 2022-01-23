@@ -1,0 +1,33 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+commonLabels:
+  instance: minio-gateway
+  node.statcan.gc.ca/purpose: system
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+resources:
+  - minio/
+  - etcd/
+  - opa/
+  - networkpolicies/
+
+
+## using a valueFrom instead of value
+patches:
+- target:
+    kind: (StatefulSet|Deployment)
+    name: minio-gateway.*
+  patch: |-
+    - op: add
+      path: /spec/template/spec/tolerations
+      value: []
+- target:
+    kind: (StatefulSet|Deployment)
+    name: minio-gateway.*
+  patch: |-
+    - op: add
+      path: /spec/template/spec/nodeSelector
+      value: {}

@@ -1,0 +1,65 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# namespace: minio-gateway-standard-oidc-system
+
+resources:
+  - ../../base/
+  - roles-and-bindings.yaml
+
+configMapGenerator:
+  - files:
+      - policy.rego
+    name: minio-gateway-opa
+
+# NOTE: We're not using the headless service
+patchesStrategicMerge:
+- |-
+   apiVersion: apps/v1
+   kind: Deployment
+   metadata:
+     name: minio-gateway
+   spec:
+     template:
+       spec:
+         containers:
+           - name: minio
+             env:
+               - name: MINIO_IDENTITY_OPENID_CONFIG_URL
+                 valueFrom:
+                   secretKeyRef:
+                     name: minio-gateway-openid-secret
+                     key: MINIO_IDENTITY_OPENID_CONFIG_URL
+               - name: MINIO_IDENTITY_OPENID_CLIENT_ID
+                 valueFrom:
+                   secretKeyRef:
+                     name: minio-gateway-openid-secret
+                     key: MINIO_IDENTITY_OPENID_CLIENT_ID
+
+# Add Kubeflow OPA Sync
+patchesJson6902:
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: minio-gateway-opa
+    patch: |-
+      - op: add
+        path: "/spec/template/spec/containers/-"
+        value:
+          image: k8scc01covidacr.azurecr.io/kubeflow-opa-sync:latest
+          imagePullPolicy: Always
+          name: kubeflow-opa-sync
+          resources:
+            limits:
+              cpu: 100m
+              memory: 200Mi
+            requests:
+              cpu: 100m
+              memory: 200Mi
+          securityContext: {}
+      - op: add
+        path: "/spec/template/spec/serviceAccountName"
+        value: kubeflow-opa-sync
+      - op: add
+        path: "/spec/template/spec/automountServiceAccountToken"
+        value: true

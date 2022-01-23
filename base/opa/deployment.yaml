@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minio-gateway-opa
+  namespace: storage-system
+  labels:
+    app.kubernetes.io/name: minio-gateway-opa
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: minio-gateway-opa
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: minio-gateway-opa
+    spec:
+      containers:
+        - name: opa
+          image: openpolicyagent/opa:0.32.0
+          imagePullPolicy: Always
+          args:
+            - run
+            - --ignore=.*
+            - --server
+            - /policies
+          env:
+            - name: MINIO_ADMIN
+              valueFrom:
+                secretKeyRef:
+                  key: access-key
+                  name: minio-gateway-secret
+          ports:
+            - containerPort: 8181
+              name: http
+              protocol: TCP
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /
+              port: 8181
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 1
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /health?bundle=true
+              port: 8181
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 1
+          resources:
+            limits:
+              cpu: "2"
+              memory: 2Gi
+            requests:
+              cpu: 500m
+              memory: 500Mi
+          securityContext: {}
+          volumeMounts:
+            - mountPath: /policies
+              mountPropagation: None
+              name: policies
+              readOnly: true
+      securityContext: {}
+      tolerations: []
+      volumes:
+        - configMap:
+            defaultMode: 420
+            name: minio-gateway-opa
+          name: policies

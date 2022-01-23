@@ -1,0 +1,9 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: minio-gateway-etcd
+spec:
+  host: minio-gateway-etcd
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL

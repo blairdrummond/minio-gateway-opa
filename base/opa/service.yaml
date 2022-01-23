@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio-gateway-opa
+  namespace: storage-system
+  labels:
+    app.kubernetes.io/name: minio-gateway-opa
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: minio-gateway-opa
+  ports:
+    - name: http
+      port: 8181
+      protocol: TCP
+      targetPort: 8181
