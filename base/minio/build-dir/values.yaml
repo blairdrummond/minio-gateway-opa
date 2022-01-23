@@ -1,0 +1,35 @@
+nameOverride: "minio-gateway"
+commonLabels:
+  app: minio-gateway
+auth:
+  existingSecret: minio-gateway-secret
+gateway:
+  enabled: true
+  replicaCount: 3
+  type: s3
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: "25%"
+      maxUnavailable: "25%"
+  # autoscaling:
+  #   enabled: true
+  #   minReplicas: "2"
+  #   maxReplicas: "4"
+  #   targetCPU: "60"
+  #   targetMemory: "60"
+  auth:
+    existingSecret: minio-gateway-secret
+    s3:
+      accessKey: "minioadmin"
+      secretKey: "minioadmin"
+      serviceEndpoint: https://nyc3.digitaloceanspaces.com
+extraEnv:
+  - name: MINIO_ETCD_ENDPOINTS
+    value: http://minio-gateway-etcd:2379/
+  - name: MINIO_IAM_OPA_URL
+    value: http://minio-gateway-opa:8181/v1/data/httpapi/authz
+ingress:
+  enabled: false
+resources: {}
+tolerations: []

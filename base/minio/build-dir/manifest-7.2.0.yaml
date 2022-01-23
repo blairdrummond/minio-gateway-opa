@@ -1,0 +1,163 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app: minio-gateway
+    app.kubernetes.io/instance: minio-gateway
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: minio-gateway
+    helm.sh/chart: minio-7.2.0
+  name: minio-gateway
+  namespace: default
+secrets:
+- name: minio-gateway
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: minio-gateway
+    app.kubernetes.io/instance: minio-gateway
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: minio-gateway
+    helm.sh/chart: minio-7.2.0
+  name: minio-gateway
+  namespace: default
+spec:
+  ports:
+  - name: minio
+    nodePort: null
+    port: 9000
+    targetPort: minio
+  selector:
+    app.kubernetes.io/instance: minio-gateway
+    app.kubernetes.io/name: minio-gateway
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: minio-gateway
+    app.kubernetes.io/instance: minio-gateway
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: minio-gateway
+    helm.sh/chart: minio-7.2.0
+  name: minio-gateway
+  namespace: default
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: minio-gateway
+      app.kubernetes.io/name: minio-gateway
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: minio-gateway
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: minio-gateway
+        helm.sh/chart: minio-7.2.0
+    spec:
+      affinity:
+        nodeAffinity: null
+        podAffinity: null
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/instance: minio-gateway
+                  app.kubernetes.io/name: minio-gateway
+              namespaces:
+              - default
+              topologyKey: kubernetes.io/hostname
+            weight: 1
+      containers:
+      - args:
+        - --certs-dir
+        - /opt/bitnami/minio/certs
+        - gateway
+        - azure
+        command:
+        - sh
+        - /minio.sh
+        env:
+        - name: AZURE_STORAGE_ACCOUNT
+          valueFrom:
+            secretKeyRef:
+              key: storageAccountName
+              name: azure-blob-storage
+        - name: AZURE_STORAGE_KEY
+          valueFrom:
+            secretKeyRef:
+              key: storageAccountKey
+              name: azure-blob-storage
+        - name: MINIO_ROOT_USER
+          valueFrom:
+            secretKeyRef:
+              key: access-key
+              name: minio-gateway-secret
+        - name: MINIO_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: secret-key
+              name: minio-gateway-secret
+        - name: MINIO_PROMETHEUS_AUTH_TYPE
+          value: public
+        - name: MINIO_ETCD_ENDPOINTS
+          value: http://minio-gateway-etcd:2379/
+        - name: MINIO_IAM_OPA_URL
+          value: http://minio-gateway-opa:8181/v1/data/httpapi/authz
+        envFrom: null
+        image: k8scc01covidacr.azurecr.io/minio:2021.5.27-debian-10-r8
+        imagePullPolicy: IfNotPresent
+        name: minio
+        ports:
+        - containerPort: 9000
+          name: minio
+          protocol: TCP
+        resources:
+          limits:
+            cpu: "4"
+            memory: 16Gi
+          requests:
+            cpu: "4"
+            memory: 16Gi
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1001
+        volumeMounts:
+        - mountPath: /minio.sh
+          name: minio-sh
+          subPath: minio.sh
+      initContainers:
+      - command:
+        - sh
+        - -c
+        - |
+          echo '#!/bin/sh' > /custom/minio.sh
+          echo 'echo "Waiting for sidecar..."' >> /custom/minio.sh
+          echo 'while ! curl -s -f http://127.0.0.1:15020/healthz/ready; do sleep 1; done' >> /custom/minio.sh
+          echo 'echo "Sidecar is ready."' >> /custom/minio.sh
+          echo 'echo exec minio $@' >> /custom/minio.sh
+          echo 'exec minio $@' >> /custom/minio.sh
+          chmod 555 /custom/minio.sh
+          chown nobody:nobody /custom/minio.sh
+          echo "Wrote the minio.sh script to shared volume."
+        image: busybox
+        name: wait-for-sidecar
+        volumeMounts:
+        - mountPath: /custom
+          name: minio-sh
+      securityContext:
+        fsGroup: 1001
+      serviceAccountName: minio-gateway
+      volumes:
+      - emptyDir: {}
+        name: minio-sh
