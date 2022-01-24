@@ -7,9 +7,9 @@ output "spaces_secret_name" {
 }
 
 output "accesskey" {
-  value = random_string.accesskey.value
+  value = random_string.accesskey.result
 }
 
 output "secretkey" {
-  value = random_string.secretkey.value
+  value = random_string.secretkey.result
 }
