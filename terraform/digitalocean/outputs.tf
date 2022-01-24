@@ -1,5 +1,5 @@
 output "minio_secret_name" {
-  value = kubernetes_secret.minio_gateway_secret.metadata.name
+  value = kubernetes_secret.minio_secret.metadata.name
 }
 
 output "spaces_secret_name" {
