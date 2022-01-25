@@ -95,30 +95,32 @@ spec:
         command:
         - minio
         env:
-        - name: AWS_ACCESS_KEY_ID
-          valueFrom:
-            secretKeyRef:
-              name: spaces-secret
-              key: accessKey
-        - name: AWS_SECRET_ACCESS_KEY
-          valueFrom:
-            secretKeyRef:
-              name: spaces-secret
-              key: secretKey
         - name: MINIO_ROOT_USER
           valueFrom:
             secretKeyRef:
-              name: accessKey
               key: root-user
+              name: minio-gateway-secret
         - name: MINIO_ROOT_PASSWORD
           valueFrom:
             secretKeyRef:
+              key: root-password
               name: minio-gateway-secret
-              key: secretKey
         - name: MINIO_PROMETHEUS_AUTH_TYPE
           value: public
         - name: MINIO_CONSOLE_PORT_NUMBER
           value: "9001"
+        - name: MINIO_ETCD_ENDPOINTS
+          value: http://minio-gateway-etcd:2379/
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              key: accessKey
+              name: spaces-secret
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              key: secretKey
+              name: spaces-secret
         envFrom: null
         image: docker.io/bitnami/minio:2022.1.8-debian-10-r7
         imagePullPolicy: IfNotPresent
