@@ -26,9 +26,9 @@ patchesStrategicMerge:
            - name: etcd
              env:
              - name: ETCD_ADVERTISE_CLIENT_URLS
-               value: http://minio-gateway-etcd-headless:2379
+               value: http://minio-gateway-etcd:2379
              - name: ETCD_INITIAL_ADVERTISE_PEER_URLS
-               value: http://minio-gateway-etcd-headless:2380
+               value: http://minio-gateway-etcd:2380
 
 #images:
 #- name: docker.io/bitnami/etcd
