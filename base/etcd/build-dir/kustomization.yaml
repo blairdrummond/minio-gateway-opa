@@ -29,6 +29,10 @@ patchesStrategicMerge:
                value: http://minio-gateway-etcd:2379
              - name: ETCD_INITIAL_ADVERTISE_PEER_URLS
                value: http://minio-gateway-etcd:2380
+             - name: ETCD_INITIAL_CLUSTER
+               value: minio-gateway-etcd-0=http://minio-gateway-etcd-0.minio-gateway-etcd-headless.minio.svc.cluster.local:2380,minio-gateway-etcd-1=http://minio-gateway-etcd-1.minio-gateway-etcd-headless.minio.svc.cluster.local:2380,minio-gateway-etcd-2=http://minio-gateway-etcd-2.minio-gateway-etcd-headless.minio.svc.cluster.local:2380
+             - name: ETCD_CLUSTER_DOMAIN
+               value: minio-gateway-etcd-headless.minio.svc.cluster.local
 
 #images:
 #- name: docker.io/bitnami/etcd

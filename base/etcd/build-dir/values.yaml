@@ -7,7 +7,8 @@ auth:
   rbac:
     create: false
     enabled: false
-replicaCount: 1
+replicaCount: 3
+initialClusterState: new
 persistence:
   enabled: false
 resources:
