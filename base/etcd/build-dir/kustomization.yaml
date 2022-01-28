@@ -9,6 +9,10 @@ helmChartInflationGenerator:
   chartRepoUrl: https://charts.bitnami.com/bitnami
   chartVersion: 6.13.2
   releaseName: minio-gateway-etcd
+  extraArgs:
+  - -n
+  - minio
+  releaseNamespace: minio
   helmBin: /home/argocd/custom-tools/helm-wrapper
   values: values.yaml
 
@@ -26,9 +30,11 @@ patchesStrategicMerge:
            - name: etcd
              env:
              - name: ETCD_ADVERTISE_CLIENT_URLS
-               value: http://minio-gateway-etcd:2379
+               value: http://$(MY_POD_NAME).minio-gateway-etcd-headless.minio.svc.cluster.local:2379,http://minio-gateway-etcd.minio.svc.cluster.local:2379
+             - name: ETCD_LISTEN_CLIENT_URLS
+               value: http://0.0.0.0:2379
              - name: ETCD_INITIAL_ADVERTISE_PEER_URLS
-               value: http://minio-gateway-etcd:2380
+               value: http://$(MY_POD_NAME).minio-gateway-etcd-headless.default.svc.cluster.local:2380
              - name: ETCD_INITIAL_CLUSTER
                value: minio-gateway-etcd-0=http://minio-gateway-etcd-0.minio-gateway-etcd-headless.minio.svc.cluster.local:2380,minio-gateway-etcd-1=http://minio-gateway-etcd-1.minio-gateway-etcd-headless.minio.svc.cluster.local:2380,minio-gateway-etcd-2=http://minio-gateway-etcd-2.minio-gateway-etcd-headless.minio.svc.cluster.local:2380
              - name: ETCD_CLUSTER_DOMAIN

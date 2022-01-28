@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/name: minio-gateway
     helm.sh/chart: etcd-6.13.2
   name: minio-gateway-etcd
-  namespace: default
+  namespace: minio
 spec:
   ports:
   - name: client
@@ -38,7 +38,7 @@ metadata:
     app.kubernetes.io/name: minio-gateway
     helm.sh/chart: etcd-6.13.2
   name: minio-gateway-etcd-headless
-  namespace: default
+  namespace: minio
 spec:
   clusterIP: None
   ports:
@@ -64,7 +64,7 @@ metadata:
     app.kubernetes.io/name: minio-gateway
     helm.sh/chart: etcd-6.13.2
   name: minio-gateway-etcd
-  namespace: default
+  namespace: minio
 spec:
   podManagementPolicy: Parallel
   replicas: 3
@@ -90,15 +90,17 @@ spec:
                   app.kubernetes.io/instance: minio-gateway-etcd
                   app.kubernetes.io/name: minio-gateway
               namespaces:
-              - default
+              - minio
               topologyKey: kubernetes.io/hostname
             weight: 1
       containers:
       - env:
         - name: ETCD_ADVERTISE_CLIENT_URLS
-          value: http://minio-gateway-etcd:2379
+          value: http://$(MY_POD_NAME).minio-gateway-etcd-headless.minio.svc.cluster.local:2379,http://minio-gateway-etcd.minio.svc.cluster.local:2379
+        - name: ETCD_LISTEN_CLIENT_URLS
+          value: http://0.0.0.0:2379
         - name: ETCD_INITIAL_ADVERTISE_PEER_URLS
-          value: http://minio-gateway-etcd:2380
+          value: http://$(MY_POD_NAME).minio-gateway-etcd-headless.minio.svc.cluster.local:2380
         - name: ETCD_INITIAL_CLUSTER
           value: minio-gateway-etcd-0=http://minio-gateway-etcd-0.minio-gateway-etcd-headless.minio.svc.cluster.local:2380,minio-gateway-etcd-1=http://minio-gateway-etcd-1.minio-gateway-etcd-headless.minio.svc.cluster.local:2380,minio-gateway-etcd-2=http://minio-gateway-etcd-2.minio-gateway-etcd-headless.minio.svc.cluster.local:2380
         - name: ETCD_CLUSTER_DOMAIN
@@ -131,8 +133,6 @@ spec:
           value: "yes"
         - name: ETCD_AUTH_TOKEN
           value: simple
-        - name: ETCD_LISTEN_CLIENT_URLS
-          value: http://0.0.0.0:2379
         - name: ETCD_LISTEN_PEER_URLS
           value: http://0.0.0.0:2380
         - name: ETCD_INITIAL_CLUSTER_TOKEN
