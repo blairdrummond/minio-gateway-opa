@@ -29,6 +29,16 @@ patchesStrategicMerge:
          containers:
            - name: etcd
              env:
+             - name: MY_POD_IP
+               valueFrom:
+                 fieldRef:
+                   apiVersion: v1
+                   fieldPath: status.podIP
+             - name: MY_POD_NAME
+               valueFrom:
+                 fieldRef:
+                   apiVersion: v1
+                   fieldPath: metadata.name
              - name: ETCD_ADVERTISE_CLIENT_URLS
                value: http://$(MY_POD_NAME).minio-gateway-etcd-headless.minio.svc.cluster.local:2379,http://minio-gateway-etcd.minio.svc.cluster.local:2379
              - name: ETCD_LISTEN_CLIENT_URLS
