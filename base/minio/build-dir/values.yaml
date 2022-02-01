@@ -23,7 +23,7 @@ gateway:
     s3:
       accessKey: "minioadmin"
       secretKey: "minioadmin"
-      serviceEndpoint: https://happylittlecloud-minio.nyc3.digitaloceanspaces.com
+      serviceEndpoint: https://nyc3.digitaloceanspaces.com
 extraEnvVars:
   - name: MINIO_ETCD_ENDPOINTS
     value: http://minio-gateway-etcd:2379/

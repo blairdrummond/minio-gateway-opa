@@ -109,7 +109,7 @@ spec:
             - s3
             - --console-address
             - :9001
-            - https://happylittlecloud-minio.nyc3.digitaloceanspaces.com
+            - https://nyc3.digitaloceanspaces.com
           env:
             - name: MINIO_ROOT_USER
               valueFrom:
