@@ -1,145 +1,152 @@
+---
+# Source: minio/templates/serviceaccount.yaml
 apiVersion: v1
-automountServiceAccountToken: true
 kind: ServiceAccount
 metadata:
+  name: minio-gateway
+  namespace: "default"
   labels:
-    app: minio-gateway
-    app.kubernetes.io/instance: minio-gateway
-    app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: minio-gateway
     helm.sh/chart: minio-10.0.3
-  name: minio-gateway
-  namespace: default
+    app.kubernetes.io/instance: minio-gateway
+    app.kubernetes.io/managed-by: Helm
+    app: minio-gateway
+automountServiceAccountToken: true
 secrets:
-- name: minio-gateway
+  - name: minio-gateway
 ---
+# Source: minio/templates/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  labels:
-    app: minio-gateway
-    app.kubernetes.io/instance: minio-gateway
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: minio-gateway
-    helm.sh/chart: minio-10.0.3
   name: minio-gateway
   namespace: default
-spec:
-  ports:
-  - name: minio-api
-    nodePort: null
-    port: 9000
-    targetPort: minio-api
-  - name: minio-console
-    nodePort: null
-    port: 9001
-    targetPort: minio-console
-  selector:
-    app.kubernetes.io/instance: minio-gateway
+  labels:
     app.kubernetes.io/name: minio-gateway
+    helm.sh/chart: minio-10.0.3
+    app.kubernetes.io/instance: minio-gateway
+    app.kubernetes.io/managed-by: Helm
+    app: minio-gateway
+spec:
   type: ClusterIP
+  ports:
+    - name: minio-api
+      port: 9000
+      targetPort: minio-api
+      nodePort: null
+    - name: minio-console
+      port: 9001
+      targetPort: minio-console
+      nodePort: null
+  selector:
+    app.kubernetes.io/name: minio-gateway
+    app.kubernetes.io/instance: minio-gateway
 ---
+# Source: minio/templates/gateway/deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  labels:
-    app: minio-gateway
-    app.kubernetes.io/instance: minio-gateway
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: minio-gateway
-    helm.sh/chart: minio-10.0.3
   name: minio-gateway
   namespace: default
+  labels:
+    app.kubernetes.io/name: minio-gateway
+    helm.sh/chart: minio-10.0.3
+    app.kubernetes.io/instance: minio-gateway
+    app.kubernetes.io/managed-by: Helm
+    app: minio-gateway
 spec:
   replicas: 1
-  selector:
-    matchLabels:
-      app.kubernetes.io/instance: minio-gateway
-      app.kubernetes.io/name: minio-gateway
   strategy:
     rollingUpdate:
       maxSurge: 25%
       maxUnavailable: 25%
     type: RollingUpdate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: minio-gateway
+      app.kubernetes.io/instance: minio-gateway
   template:
     metadata:
       labels:
-        app.kubernetes.io/instance: minio-gateway
-        app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: minio-gateway
         helm.sh/chart: minio-10.0.3
+        app.kubernetes.io/instance: minio-gateway
+        app.kubernetes.io/managed-by: Helm
     spec:
+      
+      serviceAccountName: minio-gateway
       affinity:
-        nodeAffinity: null
-        podAffinity: null
+        podAffinity:
+          
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
-          - podAffinityTerm:
-              labelSelector:
-                matchLabels:
-                  app.kubernetes.io/instance: minio-gateway
-                  app.kubernetes.io/name: minio-gateway
-              namespaces:
-              - default
-              topologyKey: kubernetes.io/hostname
-            weight: 1
-      containers:
-      - args:
-        - --certs-dir
-        - /opt/bitnami/minio/certs
-        - gateway
-        - s3
-        - --console-address
-        - :9001
-        - https://nyc3.digitaloceanspaces.com
-        command:
-        - minio
-        env:
-        - name: MINIO_ROOT_USER
-          valueFrom:
-            secretKeyRef:
-              key: root-user
-              name: minio-gateway-secret
-        - name: MINIO_ROOT_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              key: root-password
-              name: minio-gateway-secret
-        - name: MINIO_PROMETHEUS_AUTH_TYPE
-          value: public
-        - name: MINIO_CONSOLE_PORT_NUMBER
-          value: "9001"
-        - name: MINIO_ETCD_ENDPOINTS
-          value: http://minio-gateway-etcd:2379/
-        - name: AWS_ACCESS_KEY_ID
-          valueFrom:
-            secretKeyRef:
-              key: accessKey
-              name: spaces-secret
-        - name: AWS_SECRET_ACCESS_KEY
-          valueFrom:
-            secretKeyRef:
-              key: secretKey
-              name: spaces-secret
-        envFrom: null
-        image: docker.io/bitnami/minio:2022.1.8-debian-10-r7
-        imagePullPolicy: IfNotPresent
-        name: minio
-        ports:
-        - containerPort: 9000
-          name: minio-api
-          protocol: TCP
-        - containerPort: 9001
-          name: minio-console
-          protocol: TCP
-        resources:
-          limits: {}
-          requests: {}
-        securityContext:
-          runAsNonRoot: true
-          runAsUser: 1001
-        volumeMounts: null
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: minio-gateway
+                    app.kubernetes.io/instance: minio-gateway
+                namespaces:
+                  - "default"
+                topologyKey: kubernetes.io/hostname
+              weight: 1
+        nodeAffinity:
+          
       securityContext:
         fsGroup: 1001
-      serviceAccountName: minio-gateway
-      volumes: null
+      containers:
+        - name: minio
+          image: docker.io/bitnami/minio:2022.1.8-debian-10-r7
+          imagePullPolicy: "IfNotPresent"
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+          command:
+            - minio
+          args:
+            - --certs-dir
+            - /opt/bitnami/minio/certs
+            - gateway
+            - s3
+            - --console-address
+            - :9001
+            - https://nyc3.digitaloceanspaces.com
+          env:
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: minio-gateway-secret
+                  key: root-user
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: minio-gateway-secret
+                  key: root-password
+            - name: MINIO_PROMETHEUS_AUTH_TYPE
+              value: "public"
+            - name: MINIO_CONSOLE_PORT_NUMBER
+              value: "9001"
+            - name: MINIO_ETCD_ENDPOINTS
+              value: http://minio-gateway-etcd:2379/
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  key: accessKey
+                  name: spaces-secret
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: secretKey
+                  name: spaces-secret
+          envFrom:
+          ports:
+            - name: minio-api
+              containerPort: 9000
+              protocol: TCP
+            - name: minio-console
+              containerPort: 9001
+              protocol: TCP
+          resources:
+            limits: {}
+            requests: {}
+          volumeMounts:
+      volumes:
