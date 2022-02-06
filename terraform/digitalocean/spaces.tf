@@ -36,5 +36,7 @@ resource "kubernetes_secret" "minio_secret" {
   data = {
     "root-user" = random_string.accesskey.result
     "root-password" = random_string.secretkey.result
+    "access-key" = random_string.accesskey.result
+    "secret-key" = random_string.secretkey.result
   }
 }
